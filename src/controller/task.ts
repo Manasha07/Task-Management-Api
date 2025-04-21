@@ -33,7 +33,6 @@ export const getTaskById = async (req: Request, res: Response): Promise<void> =>
 export const createTask = async (req: Request, res: Response): Promise<void> => {
   const { title, description, status, priority, project_id, due_date } = req.body;
 
-  // ✅ 1. Check required fields
   if (!title || title.trim() === '') {
     res.status(400).json({ message: 'Task title is required' });
     return;
@@ -44,7 +43,6 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  // ✅ 2. Validate max length
   if (title.length > 255) {
     res.status(400).json({ message: 'Title must be 255 characters or less' });
     return;
@@ -55,7 +53,6 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  // ✅ 3. Validate due date
   if (!due_date || isNaN(Date.parse(due_date))) {
     res.status(400).json({ message: 'Valid due date is required' });
     return;
@@ -63,7 +60,7 @@ export const createTask = async (req: Request, res: Response): Promise<void> => 
 
   const due = new Date(due_date);
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // remove time for accurate comparison
+  today.setHours(0, 0, 0, 0);
 
   if (due < today) {
     res.status(400).json({ message: 'Due date cannot be in the past' });
@@ -127,5 +124,23 @@ export const deleteTask = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     console.error('Error deleting task:', error);
     res.status(500).json({ message: 'Error deleting task' });
+  }
+};
+
+// ✅ GET tasks by project ID
+export const getTasksByProjectId = async (req: Request, res: Response): Promise<void> => {
+  const { projectId } = req.query;
+
+  if (!projectId) {
+    res.status(400).json({ message: 'projectId is required' });
+    return;
+  }
+
+  try {
+    const [tasks] = await db.query('SELECT * FROM task WHERE project_id = ?', [projectId]);
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks by project ID:', error);
+    res.status(500).json({ message: 'Error fetching tasks by project' });
   }
 };
