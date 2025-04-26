@@ -2,12 +2,32 @@ import { Request, Response } from 'express';
 import { db } from '../config/db';
 
 // GET all tasks
-export const getAllTasks = async (_req: Request, res: Response): Promise<void> => {
+export const getAllTasks = async (req: Request, res: Response): Promise<void> => {
+  const { status, priority, dueDate } = req.query;
+
   try {
-    const [tasks] = await db.query('SELECT * FROM task');
+    let query = 'SELECT * FROM task WHERE 1=1';
+    const params: any[] = [];
+
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+
+    if (priority) {
+      query += ' AND priority = ?';
+      params.push(priority);
+    }
+
+    if (dueDate) {
+      query += ' AND DATE(due_date) = ?';  // Compare only the date part
+      params.push(dueDate);
+    }
+
+    const [tasks] = await db.query(query, params);
     res.json(tasks);
   } catch (error) {
-    console.error('Error fetching tasks:', error);
+    console.error('Error fetching tasks with filters:', error);
     res.status(500).json({ message: 'Error fetching tasks' });
   }
 };
